@@ -5,7 +5,17 @@ pipeline {
     }
 
     environment {
+
         IMAGE_NAME = 'banking-api'
+
+        AWS_REGION = 'ap-south-1'
+
+        AWS_ACCOUNT_ID = 'YOUR_AWS_ACCOUNT_ID'
+
+        ECR_REPOSITORY = 'banking-api'
+
+        REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
     }
 
     stages {
@@ -16,7 +26,7 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build & Unit Test') {
             steps {
                 sh 'mvn clean package'
             }
@@ -29,7 +39,9 @@ pipeline {
         }
 
         stage('Docker Build') {
+
             steps {
+
                 script {
 
                     def GIT_COMMIT_SHORT = sh(
@@ -37,34 +49,48 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    echo "Building Docker image..."
+                    def IMAGE_BUILD  = "${IMAGE_NAME}:${BUILD_NUMBER}"
+                    def IMAGE_LATEST = "${IMAGE_NAME}:latest"
+                    def IMAGE_COMMIT = "${IMAGE_NAME}:${GIT_COMMIT_SHORT}"
+
+                    echo "=========================================="
+                    echo "Building Docker Image"
+                    echo "=========================================="
                     echo "Build Number : ${BUILD_NUMBER}"
                     echo "Git Commit   : ${GIT_COMMIT_SHORT}"
+                    echo "Image Name   : ${IMAGE_NAME}"
+                    echo "=========================================="
 
                     sh """
                         docker build \
-                            -t ${IMAGE_NAME}:${BUILD_NUMBER} \
-                            -t ${IMAGE_NAME}:latest \
-                            -t ${IMAGE_NAME}:${GIT_COMMIT_SHORT} \
+                            -t ${IMAGE_BUILD} \
+                            -t ${IMAGE_LATEST} \
+                            -t ${IMAGE_COMMIT} \
                             .
                     """
+
                 }
+
             }
+
         }
+
     }
 
     post {
 
         success {
-            echo 'Application built successfully.'
+            echo "Pipeline executed successfully."
         }
 
         failure {
-            echo 'Build failed.'
+            echo "Pipeline failed."
         }
 
         always {
             cleanWs()
         }
+
     }
+
 }
