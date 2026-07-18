@@ -4,6 +4,10 @@ pipeline {
         label 'docker'
     }
 
+    environment {
+        IMAGE_NAME = 'banking-api'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -21,6 +25,17 @@ pipeline {
         stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh """
+                    docker build \
+                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                """
             }
         }
     }
