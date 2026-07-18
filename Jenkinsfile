@@ -30,12 +30,25 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh """
-                    docker build \
-                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
-                        -t ${IMAGE_NAME}:latest \
-                        .
-                """
+                script {
+
+                    def GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Building Docker image..."
+                    echo "Build Number : ${BUILD_NUMBER}"
+                    echo "Git Commit   : ${GIT_COMMIT_SHORT}"
+
+                    sh """
+                        docker build \
+                            -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                            -t ${IMAGE_NAME}:latest \
+                            -t ${IMAGE_NAME}:${GIT_COMMIT_SHORT} \
+                            .
+                    """
+                }
             }
         }
     }
